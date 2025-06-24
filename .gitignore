@@ -1,0 +1,23 @@
+# Bỏ qua các file hệ thống macOS
+.DS_Store
+
+# Bỏ thư mục build hoặc output
+build/
+dist/
+*.log
+
+# Node.js
+node_modules/
+
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Bb]uild/
+[Bb]uilds/
+[Oo]bj/
+sysinfo.txt
+*.user
+*.suo
+*.pidb
+*.booproj
+
