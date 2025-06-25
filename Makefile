@@ -1,4 +1,5 @@
 start:
-	@./bin/main
-build:
-	go build -go ./bin ./main/api/main.go
+	@docker compose up --build
+stop:
+	@docker-compose rm -v --force --stop
+	@docker rmi ticket--booking

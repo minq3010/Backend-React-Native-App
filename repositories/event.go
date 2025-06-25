@@ -4,15 +4,23 @@ import (
 	"context"
 
 	"github.com/minq3010/Backend-React-Native-App/models"
+	"gorm.io/gorm"
 )
 
 
 type EventRepository struct {
-	db any
+	db *gorm.DB 
 }
 
 func (r *EventRepository) GetMany(ctx context.Context) ([]*models.Event, error) {
-	return nil, nil
+	events := []*models.Event{}
+
+	res := r.db.Model(&models.Event{}).Find(&events)
+
+	if res.Error != nil {
+		return nil, res.Error
+	}
+	return events, nil
 }
 
 func (r *EventRepository) GetOne(ctx context.Context, eventId string) (*models.Event, error) {
@@ -23,7 +31,7 @@ func (r *EventRepository) CreateOne(ctx context.Context, event models.Event) (*m
 	return nil, nil
 }
 
-func NewRepository(db any) models.EventRepository {
+func NewEventRepository(db *gorm.DB) models.EventRepository {
 	return &EventRepository {
 		db: db,
 	}
