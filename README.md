@@ -9,40 +9,38 @@
 
 ### 2. Clone repository về máy
 
-git clone https://github.com/minq3010/Ticket-Booking-App-Backend.git
-cd Ticket-Booking-App-Backend/Backend
+ - git clone https://github.com/minq3010/Ticket-Booking-App-Backend.git
+ - cd Ticket-Booking-App-Backend/Backend
 
 ### 3. Tạo nhánh mới
 
-git checkout -b <ten-nhanh-cua-ban>
+ - git checkout -b `ten-nhanh-cua-ban`
 
 ### 4. Cài đặt các package cần thiết
 
-go mod tidy
+ - go mod tidy
 
 ### 5. Đã có sẵn file môi trường
 
-Không cần tạo lại file `.env`, chỉ cần kiểm tra và cập nhật các biến nếu cần.
+ - Không cần tạo lại file `.env`, chỉ cần kiểm tra và cập nhật các biến nếu cần.
 
 ### 6. Chạy dự án bằng Makefile (Docker)
 
-make start
+ - make start
 
 ### 7. Dừng dự án
 
-make stop
+ - make stop
 
 ### 8. Pull code mới nhất từ remote
 
-git pull origin main
+ - git pull origin main
 
 ### 9. Push code lên remote
 
-git add .
-git commit -m "Mô tả thay đổi"
-git push origin <ten-nhanh-cua-ban>
-
----
+ - git add .
+ - git commit -m "Mô tả thay đổi"
+ - git push origin `ten-nhanh-cua-ban`
 
 **Lưu ý:**  
 - Đảm bảo đã cài đặt Go, Docker và Make trên máy.
