@@ -8,11 +8,11 @@ import (
 )
 
 type Event struct {
-	ID                    uint   	`json:"id" gorm:"primarykey"`
-	Name                  string 	`json:"name"`
-	Location              string 	`json:"location"`
+	ID                    uint      `json:"id"                    gorm:"primarykey"`
+	Name                  string    `json:"name"`
+	Location              string    `json:"location"`
 	TotalTicketsPurchased int64     `json:"totalTicketsPurchased" gorm:"-"`
-	TotalTicketsEntered   int64     `json:"totalTicketsEntered" gorm:"-"`
+	TotalTicketsEntered   int64     `json:"totalTicketsEntered"   gorm:"-"`
 	Date                  time.Time `json:"date"`
 	CreatedAt             time.Time `json:"createdAt"`
 	UpdatedAt             time.Time `json:"updatedAt"`
