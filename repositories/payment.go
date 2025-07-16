@@ -17,7 +17,7 @@ func NewPaymentRepository(db *gorm.DB) *PaymentRepository {
 	}
 }
 
-func (r *PaymentRepository)	Creaet(ctx context.Context, p *models.Payment) error {
+func (r *PaymentRepository)	Create(ctx context.Context, p *models.Payment) error {
 	return r.db.WithContext(ctx).Create(p).Error
 }
 
