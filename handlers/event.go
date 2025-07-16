@@ -58,9 +58,10 @@ func (h *EventHandler) GetOne(ctx *fiber.Ctx) error {
 func (h *EventHandler) CreateOne(ctx *fiber.Ctx) error {
 	event := &models.Event{}
 
-	context, cancel := context.WithTimeout(context.Background(), time.Duration(5*time.Second))
+	context, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
+	// Parse dữ liệu từ body, bao gồm cả price
 	if err := ctx.BodyParser(event); err != nil {
 		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(&fiber.Map{
 			"status":  "fail",
@@ -69,8 +70,15 @@ func (h *EventHandler) CreateOne(ctx *fiber.Ctx) error {
 		})
 	}
 
-	event, err := h.repository.CreateOne(context, event)
+	// ✅ Validate giá vé
+	if event.Price < 0 {
+		return ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+			"status":  "fail",
+			"message": "Price must be greater than or equal to 0",
+		})
+	}
 
+	event, err := h.repository.CreateOne(context, event)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 			"status":  "fail",
@@ -90,7 +98,7 @@ func (h *EventHandler) UpdateOne(ctx *fiber.Ctx) error {
 	eventId, _ := strconv.Atoi(ctx.Params("eventId"))
 	updateData := make(map[string]interface{})
 
-	context, cancel := context.WithTimeout(context.Background(), time.Duration(5*time.Second))
+	context, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	if err := ctx.BodyParser(&updateData); err != nil {
@@ -101,8 +109,28 @@ func (h *EventHandler) UpdateOne(ctx *fiber.Ctx) error {
 		})
 	}
 
-	event, err := h.repository.UpdateOne(context, uint(eventId), updateData)
+	// ✅ Kiểm tra nếu có field "price" thì không được < 0
+	if val, ok := updateData["price"]; ok {
+		switch v := val.(type) {
+		case float64:
+			if int(v) < 0 {
+				return ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+					"status":  "fail",
+					"message": "Price must be >= 0",
+				})
+			}
+			updateData["price"] = int(v)
+		case int:
+			if v < 0 {
+				return ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+					"status":  "fail",
+					"message": "Price must be >= 0",
+				})
+			}
+		}
+	}
 
+	event, err := h.repository.UpdateOne(context, uint(eventId), updateData)
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 			"status":  "fail",
