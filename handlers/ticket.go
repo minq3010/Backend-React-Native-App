@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -54,12 +55,12 @@ func (h *TicketHandler) GetOne(ctx *fiber.Ctx) error {
 	}
 
 	var QRCode []byte
-	QRCode, err = qrcode.Encode (
+	QRCode, err = qrcode.Encode(
 		fmt.Sprintf("ticketId:%v,ownerId:%v", ticketId, userId),
 		qrcode.Medium,
 		256,
 	)
-	
+
 	if err != nil {
 		return ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
 			"status":  "fail",
@@ -78,77 +79,113 @@ func (h *TicketHandler) GetOne(ctx *fiber.Ctx) error {
 }
 
 func (h *TicketHandler) CreateOne(ctx *fiber.Ctx) error {
-	context, cancel := context.WithTimeout(context.Background(), time.Duration(5*time.Second))
+	context, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	ticket := &models.Ticket{}
 	userId := uint(ctx.Locals("userId").(float64))
 
 	if err := ctx.BodyParser(ticket); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(&fiber.Map{
-				"status":  "fail",
-				"message": err.Error(),
-				"data": nil,
-			})	
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+			"status":  "fail",
+			"message": err.Error(),
+			"data":    nil,
+		})
 	}
 
-	ticket, err := h.repository.CreateOne(context, userId, ticket)
+	ticket.UserID = userId
 
+	ticket, err := h.repository.CreateOne(context, userId, ticket)
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "fail",
 			"message": err.Error(),
 		})
 	}
 
-	return ctx.Status(fiber.StatusCreated).JSON(&fiber.Map{
+	return ctx.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"status":  "success",
-		"message": "",
+		"message": "Ticket created",
 		"data":    ticket,
-	})	
+	})
 }
 
 func (h *TicketHandler) ValidateOne(ctx *fiber.Ctx) error {
-	context, cancel := context.WithTimeout(context.Background(), time.Duration(5*time.Second))
+	context, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	validateBody := &models.ValidateTicket{}
-
 	if err := ctx.BodyParser(validateBody); err != nil {
-		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(&fiber.Map{
-				"status":  "fail",
-				"message": err.Error(),
-				"data": nil,
-			})	
+		return ctx.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+			"status":  "fail",
+			"message": err.Error(),
+			"data":    nil,
+		})
 	}
 
-	validateData := make(map[string]interface{})
-	validateData["entered"] = true
-
+	validateData := map[string]interface{}{"entered": true}
 	ticket, err := h.repository.UpdateOne(context, validateBody.OwnerId, validateBody.TicketId, validateData)
-
 	if err != nil {
-		return ctx.Status(fiber.StatusBadRequest).JSON(&fiber.Map{
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"status":  "fail",
 			"message": err.Error(),
 		})
 	}
 
-	return ctx.Status(fiber.StatusOK).JSON(&fiber.Map{
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
 		"status":  "success",
 		"message": "Welcome to the show!",
 		"data":    ticket,
-	})	
+	})
 }
 
+func (h *TicketHandler) UpdatePrice(ctx *fiber.Ctx) error {
+	reqContext, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	type ReqBody struct {
+		TicketID uint `json:"ticketId"`
+		Price    int  `json:"price"`
+	}
+	var body ReqBody
+
+	if err := ctx.BodyParser(&body); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"status":  "fail",
+			"message": "Invalid body",
+		})
+	}
+
+	userId := uint(ctx.Locals("userId").(float64))
+	update := map[string]interface{}{"price": body.Price}
+
+	ticket, err := h.repository.UpdateOne(reqContext, userId, body.TicketID, update)
+	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			return ctx.Status(fiber.StatusRequestTimeout).JSON(fiber.Map{
+				"status":  "fail",
+				"message": "Request timeout",
+			})
+		}
+		return ctx.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"status":  "fail",
+			"message": err.Error(),
+		})
+	}
+
+	return ctx.Status(fiber.StatusOK).JSON(fiber.Map{
+		"status":  "success",
+		"message": "Price updated",
+		"data":    ticket,
+	})
+}
 
 func NewTicketHandler(router fiber.Router, repository models.TicketRepository) {
-	handler := &TicketHandler{
-		repository: repository,
-	}
+	handler := &TicketHandler{repository: repository}
 
 	router.Get("/", handler.GetMany)
 	router.Post("/", handler.CreateOne)
 	router.Get("/:ticketId", handler.GetOne)
 	router.Post("/validate", handler.ValidateOne)
+	router.Put("/update-price", handler.UpdatePrice) // ✅ Route mới
 }
