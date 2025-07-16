@@ -25,7 +25,7 @@ func main() {
 	eventRepository := repositories.NewEventRepository(db)
 	ticketRepository := repositories.NewTicketRepository(db)
 	authRepository := repositories.NewAuthRepository(db)
-
+	paymentRepository := repositories.NewPaymentRepository(db)
 	// service
 	authService := services.NewAuthService(authRepository)
 
@@ -38,6 +38,6 @@ func main() {
 	// handler
 	handlers.NewEventHandler(privateRoutes.Group("/event"), eventRepository)
 	handlers.NewTicketHandler(privateRoutes.Group("/ticket"), ticketRepository)
-
+	handlers.NewPaymentHandler(privateRoutes.Group("/payment"), paymentRepository, eventRepository, ticketRepository)	
 	app.Listen(fmt.Sprint(":" + envConfig.ServerPort))
 }
