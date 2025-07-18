@@ -25,3 +25,4 @@ sysinfo.txt
 post_cmd.txt
 pre_cmd.txt
 tmp
+.env
