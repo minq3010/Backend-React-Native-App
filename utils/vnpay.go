@@ -58,24 +58,31 @@ func GenerateOrderID(userID uint, eventID uint) string {
 }
 
 func VerifyVnpaySignature(params map[string]string, receivedSignature string) bool {
-	// 1. Xoá chữ ký gốc để không đưa vào khi ký lại
-	delete(params, "vnp_SecureHash")
+	// 1. Tạo bản copy để không thay đổi map gốc
+	paramsCopy := make(map[string]string)
+	for k, v := range params {
+		// Chỉ thêm các tham số bắt đầu với "vnp_" và không phải SecureHash
+		if strings.HasPrefix(k, "vnp_") && k != "vnp_SecureHash" {
+			paramsCopy[k] = v
+		}
+	}
 
 	// 2. Sắp xếp keys theo thứ tự alphabet
 	var keys []string
-	for k := range params {
+	for k := range paramsCopy {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
 
 	// 3. Ghép lại thành chuỗi raw
-	var raw string
-	for i, k := range keys {
-		raw += fmt.Sprintf("%s=%s", k, params[k])
-		if i < len(keys)-1 {
-			raw += "&"
+	var rawParts []string
+	for _, k := range keys {
+		// Chỉ thêm nếu value không rỗng
+		if paramsCopy[k] != "" {
+			rawParts = append(rawParts, fmt.Sprintf("%s=%s", k, paramsCopy[k]))
 		}
 	}
+	raw := strings.Join(rawParts, "&")
 
 	// 4. Tạo chữ ký HMAC SHA512 từ raw string
 	h := hmac.New(sha512.New, []byte(os.Getenv("VNP_HASHSECRET")))
@@ -83,6 +90,7 @@ func VerifyVnpaySignature(params map[string]string, receivedSignature string) bo
 	expectedSignature := hex.EncodeToString(h.Sum(nil))
 
 	// 5. Debug log
+	fmt.Println("🔐 Filtered params:", paramsCopy)
 	fmt.Println("🔐 Raw string      :", raw)
 	fmt.Println("🔐 Expected signature:", expectedSignature)
 	fmt.Println("🔐 Received signature:", receivedSignature)
